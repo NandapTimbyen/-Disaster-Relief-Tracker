@@ -4,6 +4,8 @@
 (define-constant err-already-exists (err u102))
 (define-constant err-invalid-amount (err u103))
 (define-constant err-unauthorized (err u104))
+(define-constant err-insufficient-pool-funds (err u105))
+(define-constant err-pool-inactive (err u106))
 
 (define-data-var total-donations uint u0)
 (define-data-var total-disbursements uint u0)
@@ -58,11 +60,24 @@
     }
 )
 
+(define-map matching-pools
+    { pool-id: uint }
+    {
+        sponsor: principal,
+        disaster-id: uint,
+        multiplier: uint,
+        total-fund: uint,
+        remaining-fund: uint,
+        active: bool
+    }
+)
+
 (define-data-var disaster-id-nonce uint u0)
 (define-data-var recipient-id-nonce uint u0)
 (define-data-var volunteer-id-nonce uint u0)
 (define-data-var donation-id-nonce uint u0)
 (define-data-var disbursement-id-nonce uint u0)
+(define-data-var matching-pool-id-nonce uint u0)
 
 (define-public (register-disaster (name (string-ascii 50)) (location (string-ascii 50)) (amount-needed uint))
     (let ((disaster-id (+ (var-get disaster-id-nonce) u1)))
@@ -106,18 +121,63 @@
                     })))
             err-owner-only)))
 
+(define-public (create-matching-pool (disaster-id uint) (multiplier uint) (fund-amount uint))
+    (let ((pool-id (+ (var-get matching-pool-id-nonce) u1)))
+        (if (is-eq tx-sender contract-owner)
+            (begin
+                (var-set matching-pool-id-nonce pool-id)
+                (ok (map-insert matching-pools
+                    { pool-id: pool-id }
+                    {
+                        sponsor: tx-sender,
+                        disaster-id: disaster-id,
+                        multiplier: multiplier,
+                        total-fund: fund-amount,
+                        remaining-fund: fund-amount,
+                        active: true
+                    })))
+            err-owner-only)))
+
+(define-private (find-active-matching-pool (disaster-id uint))
+    (let ((pool-id u1))
+        (match (map-get? matching-pools { pool-id: pool-id })
+            pool (if (and (is-eq (get disaster-id pool) disaster-id)
+                         (get active pool)
+                         (> (get remaining-fund pool) u0))
+                     (some pool-id)
+                     none)
+            none)))
+
+(define-private (apply-matching (disaster-id uint) (donation-amount uint))
+    (match (find-active-matching-pool disaster-id)
+        pool-id
+        (match (map-get? matching-pools { pool-id: pool-id })
+            pool
+            (let ((matching-amount (* donation-amount (get multiplier pool))))
+                (if (<= matching-amount (get remaining-fund pool))
+                    (begin
+                        (map-set matching-pools
+                            { pool-id: pool-id }
+                            (merge pool { remaining-fund: (- (get remaining-fund pool) matching-amount) }))
+                        matching-amount)
+                    u0))
+            u0)
+        u0))
+
 (define-public (donate (disaster-id uint) (amount uint))
-    (let ((donation-id (+ (var-get donation-id-nonce) u1)))
+    (let ((donation-id (+ (var-get donation-id-nonce) u1))
+          (matched-amount (apply-matching disaster-id amount))
+          (total-amount (+ amount matched-amount)))
         (if (> amount u0)
             (begin
                 (var-set donation-id-nonce donation-id)
-                (var-set total-donations (+ (var-get total-donations) amount))
+                (var-set total-donations (+ (var-get total-donations) total-amount))
                 (ok (map-insert donations
                     { donation-id: donation-id }
                     {
                         donor: tx-sender,
                         disaster-id: disaster-id,
-                        amount: amount,
+                        amount: total-amount,
                         timestamp: stacks-block-height
                     })))
             err-invalid-amount)))
@@ -147,6 +207,29 @@
                     verified-by: (some tx-sender),
                     status: "verified"
                 }))))))
+
+(define-public (deactivate-matching-pool (pool-id uint))
+    (let ((pool (unwrap! (map-get? matching-pools { pool-id: pool-id }) err-not-found)))
+        (if (is-eq tx-sender contract-owner)
+            (ok (map-set matching-pools
+                { pool-id: pool-id }
+                (merge pool { active: false })))
+            err-owner-only)))
+
+(define-read-only (get-matching-pool-info (pool-id uint))
+    (map-get? matching-pools { pool-id: pool-id }))
+
+(define-read-only (get-matching-effectiveness (disaster-id uint) (donation-amount uint))
+    (match (find-active-matching-pool disaster-id)
+        pool-id
+        (match (map-get? matching-pools { pool-id: pool-id })
+            pool
+            (let ((potential-match (* donation-amount (get multiplier pool))))
+                (if (<= potential-match (get remaining-fund pool))
+                    (some { original: donation-amount, matched: potential-match, total: (+ donation-amount potential-match) })
+                    (some { original: donation-amount, matched: u0, total: donation-amount })))
+            none)
+        none))
 
 (define-read-only (get-disaster-info (disaster-id uint))
     (map-get? disasters { disaster-id: disaster-id }))
