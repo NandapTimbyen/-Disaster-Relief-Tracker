@@ -1,4 +1,4 @@
-# 🌍 Disaster Relief Tracker Smart Contract
+Disaster Relief Tracker Smart Contract
 
 A transparent blockchain-based platform for managing and tracking disaster relief efforts.
 
@@ -9,6 +9,7 @@ A transparent blockchain-based platform for managing and tracking disaster relie
 - ✅ Volunteer-based verification
 - 💸 Secure fund disbursement
 - 📈 Real-time statistics
+- 👥 Volunteer assignment system
 
 ## 🚀 Contract Functions
 
@@ -16,6 +17,8 @@ A transparent blockchain-based platform for managing and tracking disaster relie
 - `register-disaster`: Create new disaster relief campaigns
 - `register-recipient`: Add verified aid recipients
 - `register-volunteer`: Register trusted volunteers
+- `assign-volunteer-to-disaster`: Assign volunteers to specific disasters
+- `unassign-volunteer-from-disaster`: Remove volunteer assignments
 
 ### Donation Functions
 - `donate`: Make donations to specific disaster relief efforts
@@ -28,6 +31,7 @@ A transparent blockchain-based platform for managing and tracking disaster relie
 - `get-donation-info`: Track specific donations
 - `get-total-donations`: View total donations received
 - `get-total-disbursements`: Check total aid disbursed
+- `is-volunteer-assigned`: Check volunteer assignment status
 
 ## 💻 Usage
 
@@ -56,18 +60,17 @@ PR Title:
 
 PR Description:
 ```
-This PR introduces the Disaster Relief Tracker smart contract MVP with the following features:
+Revolutionize disaster response coordination with our cutting-edge volunteer assignment system! 🌟 This innovative feature empowers administrators to seamlessly link dedicated volunteers with specific disaster campaigns, creating a more structured and accountable relief ecosystem.
 
-- Transparent donation management system
-- Recipient registration and verification
-- Volunteer-based disbursement verification
-- Real-time tracking of donations and disbursements
-- Administrative controls for disaster campaign management
+Dive deep into the mechanics: our system introduces a robust mapping mechanism that tracks volunteer-disaster relationships with precision. By enabling owner-controlled assignments and unassignments, we ensure only authorized personnel can manage these critical connections. The read-only query function provides instant visibility into assignment status, supporting real-time decision-making.
 
-The implementation includes:
-- Core smart contract with essential functions
-- Documentation with usage instructions
-- Clean and minimal codebase focused on core functionality
+Key enhancements include:
+- 🔗 Direct volunteer-to-disaster linkages
+- 🛡️ Owner-gated assignment controls
+- 📊 Transparent assignment tracking
+- ⚡ Efficient query capabilities
+
+#DisasterRelief #BlockchainInnovation #VolunteerCoordination #SmartContracts
 
 Ready for review and testing.
 

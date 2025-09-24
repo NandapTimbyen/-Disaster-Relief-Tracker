@@ -71,6 +71,10 @@
         active: bool
     }
 )
+(define-map volunteer-assignments
+    { volunteer-id: uint, disaster-id: uint }
+    { assigned: bool }
+)
 
 (define-data-var disaster-id-nonce uint u0)
 (define-data-var recipient-id-nonce uint u0)
@@ -215,6 +219,15 @@
                 { pool-id: pool-id }
                 (merge pool { active: false })))
             err-owner-only)))
+(define-public (assign-volunteer-to-disaster (volunteer-id uint) (disaster-id uint))
+    (if (is-eq tx-sender contract-owner)
+        (ok (map-set volunteer-assignments { volunteer-id: volunteer-id, disaster-id: disaster-id } { assigned: true }))
+        err-owner-only))
+
+(define-public (unassign-volunteer-from-disaster (volunteer-id uint) (disaster-id uint))
+    (if (is-eq tx-sender contract-owner)
+        (ok (map-delete volunteer-assignments { volunteer-id: volunteer-id, disaster-id: disaster-id }))
+        err-owner-only))
 
 (define-read-only (get-matching-pool-info (pool-id uint))
     (map-get? matching-pools { pool-id: pool-id }))
@@ -242,6 +255,8 @@
 
 (define-read-only (get-total-donations)
     (ok (var-get total-donations)))
+(define-read-only (is-volunteer-assigned (volunteer-id uint) (disaster-id uint))
+    (default-to false (get assigned (map-get? volunteer-assignments { volunteer-id: volunteer-id, disaster-id: disaster-id }))))
 
 (define-read-only (get-total-disbursements)
     (ok (var-get total-disbursements)))
