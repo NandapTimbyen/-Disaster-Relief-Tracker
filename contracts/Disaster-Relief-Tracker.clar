@@ -76,6 +76,8 @@
     { assigned: bool }
 )
 
+(define-map volunteer-addresses principal uint)
+
 (define-data-var disaster-id-nonce uint u0)
 (define-data-var recipient-id-nonce uint u0)
 (define-data-var volunteer-id-nonce uint u0)
@@ -116,6 +118,7 @@
         (if (is-eq tx-sender contract-owner)
             (begin
                 (var-set volunteer-id-nonce volunteer-id)
+                (map-set volunteer-addresses volunteer volunteer-id)
                 (ok (map-insert volunteers
                     { volunteer-id: volunteer-id }
                     {
@@ -228,6 +231,17 @@
     (if (is-eq tx-sender contract-owner)
         (ok (map-delete volunteer-assignments { volunteer-id: volunteer-id, disaster-id: disaster-id }))
         err-owner-only))
+
+(define-public (verify-recipient (recipient-id uint))
+    (let ((recipient (unwrap! (map-get? recipients { recipient-id: recipient-id }) err-not-found))
+          (disaster-id (get disaster-id recipient))
+          (volunteer-id (unwrap! (map-get? volunteer-addresses tx-sender) err-unauthorized)))
+        (if (and (not (get verified recipient))
+                 (is-volunteer-assigned volunteer-id disaster-id))
+            (ok (map-set recipients
+                { recipient-id: recipient-id }
+                (merge recipient { verified: true })))
+            err-unauthorized)))
 
 (define-read-only (get-matching-pool-info (pool-id uint))
     (map-get? matching-pools { pool-id: pool-id }))

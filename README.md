@@ -10,6 +10,7 @@ A transparent blockchain-based platform for managing and tracking disaster relie
 - 💸 Secure fund disbursement
 - 📈 Real-time statistics
 - 👥 Volunteer assignment system
+- 🔍 Decentralized recipient verification by assigned volunteers
 
 ## 🚀 Contract Functions
 
@@ -19,6 +20,9 @@ A transparent blockchain-based platform for managing and tracking disaster relie
 - `register-volunteer`: Register trusted volunteers
 - `assign-volunteer-to-disaster`: Assign volunteers to specific disasters
 - `unassign-volunteer-from-disaster`: Remove volunteer assignments
+
+### Verification Functions
+- `verify-recipient`: Allow assigned volunteers to verify recipients for their disaster
 
 ### Donation Functions
 - `donate`: Make donations to specific disaster relief efforts
