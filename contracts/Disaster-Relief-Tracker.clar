@@ -78,12 +78,23 @@
 
 (define-map volunteer-addresses principal uint)
 
+(define-map progress-reports
+    { report-id: uint }
+    {
+        disaster-id: uint,
+        volunteer-id: uint,
+        report: (string-ascii 500),
+        timestamp: uint
+    }
+)
+
 (define-data-var disaster-id-nonce uint u0)
 (define-data-var recipient-id-nonce uint u0)
 (define-data-var volunteer-id-nonce uint u0)
 (define-data-var donation-id-nonce uint u0)
 (define-data-var disbursement-id-nonce uint u0)
 (define-data-var matching-pool-id-nonce uint u0)
+(define-data-var progress-report-id-nonce uint u0)
 
 (define-public (register-disaster (name (string-ascii 50)) (location (string-ascii 50)) (amount-needed uint))
     (let ((disaster-id (+ (var-get disaster-id-nonce) u1)))
@@ -243,6 +254,22 @@
                 (merge recipient { verified: true })))
             err-unauthorized)))
 
+(define-public (submit-progress-report (disaster-id uint) (report (string-ascii 500)))
+    (let ((report-id (+ (var-get progress-report-id-nonce) u1))
+          (volunteer-id (unwrap! (map-get? volunteer-addresses tx-sender) err-unauthorized)))
+        (if (is-volunteer-assigned volunteer-id disaster-id)
+            (begin
+                (var-set progress-report-id-nonce report-id)
+                (ok (map-insert progress-reports
+                    { report-id: report-id }
+                    {
+                        disaster-id: disaster-id,
+                        volunteer-id: volunteer-id,
+                        report: report,
+                        timestamp: stacks-block-height
+                    })))
+            err-unauthorized)))
+
 (define-read-only (get-matching-pool-info (pool-id uint))
     (map-get? matching-pools { pool-id: pool-id }))
 
@@ -274,3 +301,6 @@
 
 (define-read-only (get-total-disbursements)
     (ok (var-get total-disbursements)))
+
+(define-read-only (get-progress-report (report-id uint))
+    (map-get? progress-reports { report-id: report-id }))
