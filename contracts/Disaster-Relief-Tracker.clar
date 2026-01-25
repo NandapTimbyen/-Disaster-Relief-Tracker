@@ -51,14 +51,15 @@
 )
 
 (define-map disbursements
-    { disbursement-id: uint }
-    {
-        recipient-id: uint,
-        amount: uint,
-        verified-by: (optional principal),
-        status: (string-ascii 20)
-    }
-)
+     { disbursement-id: uint }
+     {
+         recipient-id: uint,
+         amount: uint,
+         verified-by: (optional principal),
+         status: (string-ascii 20),
+         votes-count: uint
+     }
+ )
 
 (define-map matching-pools
     { pool-id: uint }
@@ -211,7 +212,8 @@
                         recipient-id: recipient-id,
                         amount: amount,
                         verified-by: none,
-                        status: "pending"
+                        status: "pending",
+                        votes-count: u0
                     })))
             err-owner-only)))
 
